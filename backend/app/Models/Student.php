@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    protected $fillable = ['name', 'gender', 'address', 'birthDate', 'bacGrade', 'idBranch', 'photo'];
+    protected $fillable = ['name', 'gender', 'address', 'birthDate', 'bacGrade', 'idBranch', 'image'];
 
     public function branch()
     {

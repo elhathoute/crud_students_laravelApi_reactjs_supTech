@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class ApiAuthController extends Controller
+{
+    /**
+     * Login: email + password, returns token.
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Identifiants incorrects.'],
+            ]);
+        }
+
+        $user->tokens()->delete();
+        $token = $user->createToken('spa')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+        ]);
+    }
+
+    /**
+     * Register: name, email, password, password_confirmation. Returns token.
+     */
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $token = $user->createToken('spa')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+        ], 201);
+    }
+
+    /**
+     * Logout: revoke current token.
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Déconnecté']);
+    }
+}

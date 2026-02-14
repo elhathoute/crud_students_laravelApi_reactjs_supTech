@@ -17,11 +17,11 @@ class StudentResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'gender' => $this->gender,
+            'gender' => $this->gender ? strtoupper(mb_substr((string) $this->gender, 0, 1)) : null,
             'address' => $this->address,
             'birthDate' => $this->birthDate,
             'bacGrade' => $this->bacGrade,
-            'image' => $this->image,
+            'photo' => $this->image ?: 'images/no-photo.jpg',
             'idBranch' => $this->idBranch,
             'branch' => $this->branch?->name
         ];
