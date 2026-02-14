@@ -7,6 +7,139 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## API Students - Configuration
+
+### 1. Installer l'API Laravel
+
+```bash
+php artisan install:api
+```
+
+### 2. Fichier routes/api.php
+
+```php
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ApiStudentsController;
+
+Route::apiResource('/apiStudents', ApiStudentsController::class);
+```
+
+### 3. Controller ApiStudentsController
+
+Créer le controller : `php artisan make:controller ApiStudentsController`
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Student;
+use App\Http\Resources\StudentResource;
+
+class ApiStudentsController extends Controller
+{
+    public function index()
+    {
+        return ['students'=>StudentResource::collection(Student::all())];
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'=> 'required|string|min:2',
+            'gender'=> 'required|string|in:M,F',
+            'address'=> 'required',
+            'birthDate' => 'required|date',
+            'bacGrade'=> 'required|numeric|between:0,20',
+            'idBranch'=> 'required|int',
+            'photo' => 'required|mimes:jpeg,jpg,png|max:10024'
+        ]);
+
+        $photo = $request->file('photo');
+        $photoName= uniqid().".".$photo->getClientOriginalExtension();
+        $photo->move(public_path('pictures/') , $photoName); 
+        $validated['photo'] =  $photoName;
+        
+        Student::create($validated);
+        print_r($validated);
+    }
+
+    public function show(string $id)
+    {
+        $student = Student::find($id);
+        return ['student' => StudentResource::make($student)];
+    }
+
+    public function update(Request $request, string $id)
+    {
+        // update
+    }
+
+    public function destroy(string $id)
+    {
+        $student = Student::find($id);
+        $student->delete();
+        return response()->json(['delete'=>true, 'code'=>200]);
+    }
+}
+```
+
+### 4. Resource StudentResource
+
+Créer la resource : `php artisan make:resource StudentResource`
+
+```php
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class StudentResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return parent::toArray($request);
+    }
+}
+```
+
+### 5. Modèle Student — attribut $fillable
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Models\Branch;
+use Illuminate\Database\Eloquent\Model;
+
+class Student extends Model
+{
+    protected $fillable = ['name', 'gender', 'address', 'birthDate', 'bacGrade', 'idBranch', 'photo'];
+
+    public function branch()
+    {
+        return $this->hasOne(Branch::class, 'id', 'idBranch');
+    }
+}
+```
+
+### 6. Tester avec Postman
+
+- **GET** `localhost/project/api/apiStudents` — récupérer tous les étudiants (JSON)
+- **GET** `localhost/project/api/apiStudents/id` — récupérer un étudiant (JSON)
+- **POST** `localhost/project/api/apiStudents` — créer un étudiant (renseigner les données dans Postman)
+- **PUT** `localhost/project/api/apiStudents/id` — modifier un étudiant (renseigner les nouvelles données)
+- **DELETE** `localhost/project/api/apiStudents/id` — supprimer un étudiant
+
+---
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
